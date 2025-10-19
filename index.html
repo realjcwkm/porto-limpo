@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Porto Limpo — Bueiros Inteligentes</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --primary: #059669;
+      --primary-600: #047857;
+      --red: #ef4444;
+      --green: #10b981;
+      --ink: #111827;
+    }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+    }
+    a { color: inherit; text-decoration:none; }
+    .container { max-width:1160px; margin:0 auto; padding:0 20px; }
+
+    /* Header */
+    header {
+      position: sticky; top:0; z-index:40;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: saturate(120%) blur(8px);
+      border-bottom:1px solid var(--line);
+    }
+    .nav { display:flex; align-items:center; justify-content:space-between; height:64px; }
+    .logo { display:flex; align-items:center; gap:12px; font-weight:600; }
+    .logo-dot { width:32px; height:32px; border-radius:12px;
+                background: linear-gradient(135deg,#10b981,#06b6d4); }
+    .nav .links a { font-size:14px; margin-left:20px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center;
+           padding:10px 16px; border-radius:14px; font-weight:600; }
+    .btn-primary { background: var(--primary); color:#fff; }
+    .btn-primary:hover { background: var(--primary-600); }
+    .btn-outline { border:1px solid #cbd5e1; }
+    .btn-outline:hover { border-color: #94a3b8; }
+
+    /* Sections */
+    section { padding:72px 0; }
+    h1 { font-size: clamp(28px,4vw,48px); line-height:1.1; margin-bottom:12px; }
+    h2 { font-size: clamp(24px,3vw,34px); margin-bottom:10px; }
+    p.lead { font-size:18px; color: var(--muted); }
+    .grid { display:grid; gap:24px; }
+    .grid-2 { grid-template-columns:1.1fr 1fr; }
+    @media (max-width:960px) { .grid-2 { grid-template-columns:1fr; } }
+
+    .card { background: var(--card); border:1px solid var(--line);
+            border-radius:22px; box-shadow: 0 8px 24px rgba(15,23,42,0.06); }
+    .card.pad { padding:16px; }
+
+    /* Dashboard mock */
+    .dash {
+      background:#0b1220; border-radius:16px; color:#e5e7eb;
+      padding:12px; position:relative;
+    }
+    .dash .top { display:flex; align-items:center; justify-content:space-between;
+                 font-size:12px; color:#cbd5e1; }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:12px; }
+    .stat { background: rgba(30,41,59,0.6); border:1px solid #334155;
+             border-radius:12px; padding:12px; display:flex; gap:10px; align-items:center; }
+    .stat .val { font-weight:700; color:#fff; }
+
+    /* Tabs */
+    .tabs { display:inline-flex; border:1px solid #334155; border-radius:12px;
+             overflow:hidden; margin-top:12px; }
+    .tab { padding:6px 10px; font-size:12px; background:#0f172a; color:#e5e7eb;
+           cursor:pointer; border:none; }
+    .tab[aria-selected="true"] { background: var(--primary); color:#fff; }
+
+    /* Map mock */
+    .map { position:relative; height:290px; border:1px solid #334155;
+           border-radius:12px; overflow:hidden; margin-top:10px; }
+    .map::before { content:""; position:absolute; inset:0;
+                   background: radial-gradient(circle at 1px 1px,#94a3b8 1px,transparent 1.6px);
+                   background-size:20px 20px; opacity:.25; }
+    .badge { position:absolute; transform:translate(-50%,-50%);
+             width:22px; height:22px; border-3px solid rgba(255,255,255,.35);
+             border-radius:50%; }
+    .badge.green { background: var(--green);
+                   box-shadow:0 0 0 4px rgba(16,185,129,.35); }
+    .badge.red   { background: var(--red);
+                   box-shadow:0 0 0 4px rgba(239,68,68,.35); }
+
+    .legend {
+      position:absolute; left:10px; bottom:10px;
+      display:flex; gap:12px; color:#d1d5db; font-size:11px;
+    }
+    .legend .dot { width:8px; height:8px; border-radius:50%; }
+
+    .list { margin-top:10px; border:1px solid #334155; border-radius:12px;
+            background: rgba(30,41,59,0.6); height:290px;
+            overflow:auto; padding:8px; }
+    .list ul { list-style:none; margin:0; padding:0; }
+    .list li { display:flex; justify-content:space-between; gap:12px;
+               padding:6px 4px; color:#e5e7eb; font-size:12px;
+               border-bottom:1px dashed rgba(148,163,184,.25); }
+    .tag { padding:2px 8px; border-radius:999px; font-size:10px; font-weight:600;
+           color:#fff; }
+    .tag.ok      { background: var(--green); }
+    .tag.alerta  { background: var(--red); }
+
+    /* Problem & cards */
+    .pill { display:inline-flex; gap:8px; align-items:center;
+            padding:6px 10px; background:#d1fae5; color:#065f46; border-radius:999px;
+            font-size:12px; font-weight:700; }
+    .kards { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    @media (max-width:720px) { .kards { grid-template-columns:1fr; } }
+    .k { border:1px solid var(--line); background:#fff; border-radius:16px;
+          padding:16px; }
+    .k h4 { margin:0 0 4px; font-size:16px; }
+    .muted { color: var(--muted); }
+
+    /* Steps, features, prices */
+    .cols-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    @media (max-width:900px) { .cols-3 { grid-template-columns:1fr; } }
+    .cols-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+    @media (max-width:1024px) { .cols-4 { grid-template-columns:repeat(2,1fr); } }
+
+    .step, .feat, .price { background:#fff; border:1px solid var(--line);
+                           border-radius:16px; padding:18px; }
+    .price.highlight { background:#ecfdf5; border-color:#a7f3d0; }
+    .price h3 { margin:0; }
+    .price .money { font-size:28px; font-weight:800; }
+    .price ul { margin:12px 0 0; padding-left:18px; list-style:disc; }
+
+    /* CTA & footer */
+    .center { text-align:center; }
+    input[type=email] { width:min(420px,100%); padding:12px 14px;
+                        border-radius:12px; border:1px solid #cbd5e1; }
+    .fine { font-size:11px; color:#64748b; }
+    footer { border-top:1px solid var(--line); background:#fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="logo">
+        <div class="logo-dot" aria-hidden="true"></div>
+        <span>Porto Limpo</span>
+      </div>
+      <nav class="links" aria-label="Principal">
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#diferenciais">Diferenciais</a>
+        <a href="#precos">Preços</a>
+        <a href="#caso-pvh">Porto Velho</a>
+        <a href="#contato">Contato</a>
+      </nav>
+      <a class="btn btn-primary" href="#contato">Falar com o time</a>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section>
+    <div class="container grid grid-2">
+      <div>
+        <span class="pill">⚡ Bueiros inteligentes • Drenagem 4.0</span>
+        <h1>Menos alagamentos. Mais eficiência. <span style="color:var(--primary)">Cidade mais limpa</span>.</h1>
+        <p class="lead">O <strong>Porto Limpo</strong> monitora bueiros em tempo real, antecipa entupimentos e orienta equipes a limpar o que importa, na hora certa. Dados viram decisões — e ruas secas.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px">
+          <a class="btn btn-primary" href="#contato">Solicitar demonstração</a>
+          <a class="btn btn-outline" href="#como-funciona">Ver como funciona</a>
+        </div>
+        <p class="fine">Instalação em bueiros críticos. Resultados em até 90 dias.</p>
+      </div>
+      <div class="card pad">
+        <div class="dash" id="dash">
+          <div class="top"><span>Dashboard • Porto Velho</span><span>Tempo real</span></div>
+          <div class="stats">
+            <div class="stat">
+              <div>🧊</div>
+              <div><div style="font-size:12px;color:#cbd5e1">Bueiros monitorados</div><div class="val" id="countTotal">—</div></div>
+            </div>
+            <div class="stat">
+              <div>✅</div>
+              <div><div style="font-size:12px;color:#cbd5e1">Verdes (OK)</div><div class="val" id="countGreen">—</div></div>
+            </div>
+            <div class="stat">
+              <div>⚠️</div>
+              <div><div style="font-size:12px;color:#cbd5e1">Vermelhos (Alerta)</div><div class="val" id="countRed">—</div></div>
+            </div>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="Visão do painel">
+            <button class="tab" id="tab-map" role="tab" aria-selected="true" aria-controls="panel-map">Mapa</button>
+            <button class="tab" id="tab-list" role="tab" aria-selected="false" aria-controls="panel-list">Lista</button>
+          </div>
+
+          <div id="panel-map" class="map" role="tabpanel" aria-label="Mapa" aria-hidden="false"></div>
+          <div id="panel-list" class="list" role="tabpanel" aria-label="Lista" aria-hidden="true">
+            <ul id="list"></ul>
+          </div>
+
+          <div class="legend">
+            <span style="display:inline-flex;gap:6px;align-items:center"><span class="dot" style="background:var(--green)"></span>Verde (10)</span>
+            <span style="display:inline-flex;gap:6px;align-items:center"><span class="dot" style="background:var(--red)"></span>Vermelho (5)</span>
+          </div>
+        </div>
+        <p class="fine" style="text-align:right;margin:6px 2px 0">Exemplo ilustrativo do painel (mockup).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEMA -->
+  <section id="problema">
+    <div class="container grid grid-2">
+      <div>
+        <h2>O problema: limpar tudo é caro, reagir atrasa</h2>
+        <p class="muted">Bueiros entopem de forma desigual. Equipes gastam tempo em locais errados e só descobrem o risco quando a água já subiu. O resultado: prejuízos, transtornos e retrabalho.</p>
+        <ul class="muted">
+          <li>• Alagamentos recorrentes nos mesmos pontos.</li>
+          <li>• Limpeza sem priorização baseada em dados.</li>
+          <li>• Alto custo operacional e desgaste das equipes.</li>
+        </ul>
+      </div>
+      <div class="kards">
+        <div class="k"><h4>Prevenção insuficiente</h4><div class="muted">Baixa estratégia preventiva em boa parte das cidades.</div></div>
+        <div class="k"><h4>Drenagem defasada</h4><div class="muted">Infraestrutura e gestão de águas pluviais críticas.</div></div>
+        <div class="k"><h4>Eventos extremos</h4><div class="muted">Chuvas intensas em curtos períodos.</div></div>
+        <div class="k"><h4>Impacto local</h4><div class="muted">Avenidas alagam e param a cidade.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section id="como-funciona" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="container center">
+      <h2>Como funciona</h2>
+      <p class="muted">Do sensor ao plano de ação — em minutos, não em dias.</p>
+      <div class="cols-3" style="margin-top:16px">
+        <div class="step"><strong>Sensor no bueiro</strong><div class="muted">Mede nível, volume e obstrução. Instalação discreta, sem antena externa visível.</div></div>
+        <div class="step"><strong>Conexão de rede</strong><div class="muted">Aproveita infraestrutura existente (LPWAN/LTE/Wi-Fi). Dados criptografados.</div></div>
+        <div class="step"><strong>Dashboard unificado</strong><div class="muted">Alertas em tempo real, mapa de calor e roteirização por prioridade.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIFERENCIAIS -->
+  <section id="diferenciais">
+    <div class="container center">
+      <h2>Por que o Porto Limpo</h2>
+      <div class="cols-4" style="margin-top:16px">
+        <div class="feat"><strong>Tempo real</strong><div class="muted">Monitora 24/7 e antecipa transbordo antes da chuva forte.</div></div>
+        <div class="feat"><strong>Bateria longa</strong><div class="muted">Autonomia estendida e baixa manutenção.</div></div>
+        <div class="feat"><strong>Robusto</strong><div class="muted">Materiais e projeto para ambiente úmido e agressivo.</div></div>
+        <div class="feat"><strong>Foco na equipe</strong><div class="muted">Roteiros claros de limpeza com ganho de produtividade.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREÇOS -->
+  <section id="precos" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="container center">
+      <h2>Modelo de contratação</h2>
+      <p class="muted">SaaS por bueiro — simples, escalável e sem surpresa.</p>
+      <div class="cols-3" style="margin-top:16px">
+        <div class="price"><div class="muted">Ativação</div><div class="money">R$ 998,00</div><div class="muted">por bueiro (setup único)</div><ul><li>Instalação e calibração</li><li>Integração com rede existente</li><li>Treinamento rápido da equipe</li></ul></div>
+        <div class="price highlight"><div class="muted">Assinatura</div><div class="money">R$ 498,00</div><div class="muted">por bueiro / mês</div><ul><li>Dashboard e alertas ilimitados</li><li>Manutenção preventiva</li><li>Atualizações contínuas</li></ul></div>
+        <div class="price"><div class="muted">Serviços</div><div class="money">Sob medida</div><div class="muted">opcional</div><ul><li>Relatórios executivos</li><li>Integração com BI/CCO</li><li>Acompanhamento mensal</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASO PORTO VELHO -->
+  <section id="caso-pvh">
+    <div class="container grid grid-2">
+      <div>
+        <h2>Porto Velho sem alagamentos desnecessários</h2>
+        <p class="muted">Começamos pelos <strong>20 bueiros críticos</strong> e entregamos resultados em até <strong>90 dias</strong>. Priorizamos hotspots como a Av. Jorge Teixeira (BR-364), Av. Calama e Av. Pinheiro Machado, entre outros.</p>
+        <ul class="muted">
+          <li>• Alertas de transbordo antes do pico de chuva.</li>
+          <li>• Roteiros de limpeza com maior impacto por equipe.</li>
+          <li>• Histórico auditável por bueiro para prestação de contas.</li>
+        </ul>
+      </div>
+      <div class="kards">
+        <div class="k"><h4>Queda de alagamentos nos hotspots</h4><div class="muted">−40% (exemplo ilustrativo)</div></div>
+        <div class="k"><h4>Produtividade por equipe</h4><div class="muted">+25% (exemplo ilustrativo)</div></div>
+        <div class="k"><h4>Redução de limpezas reativas</h4><div class="muted">−35% (exemplo ilustrativo)</div></div>
+        <div class="k"><h4>Tempo médio de resposta</h4><div class="muted">−30% (exemplo ilustrativo)</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEGURANÇA E DADOS -->
+  <section style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="container grid grid-2">
+      <div>
+        <h2>Dados confiáveis, decisões melhores</h2>
+        <p class="muted">Coletamos apenas dados operacionais. Tráfego criptografado, logs com trilha de auditoria e controles de acesso por perfil. Integrações via API para BI e centros de comando.</p>
+      </div>
+      <div class="kards">
+        <div class="k"><h4>Criptografia</h4><div class="muted">Comunicação segura de ponta a ponta.</div></div>
+        <div class="k"><h4>APIs abertas</h4><div class="muted">Integração com sistemas existentes.</div></div>
+        <div class="k"><h4>SLA operacional</h4><div class="muted">Monitoração e suporte ativo.</div></div>
+        <div class="k"><h4>Relatórios</h4><div class="muted">Evidências para prestação de contas.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA CONTATO -->
+  <section id="contato" class="center">
+    <div class="container">
+      <h2>Vamos fazer de Porto Velho uma cidade + limpa e + saudável?</h2>
+      <p class="muted">Deixe seu e-mail para receber a proposta e o cronograma de implantação.</p>
+      <form id="formDemo" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px">
+        <input type="email" id="email" required placeholder="seuemail@exemplo.com"/>
+        <button class="btn btn-primary" type="submit">Receber proposta</button>
+      </form>
+      <p class="fine">Ao enviar, você concorda em receber contato sobre a solução Porto Limpo.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container" style="padding:28px 0; display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:space-between">
+      <div style="display:flex; gap:12px; align-items:center"><div class="logo-dot" aria-hidden="true"></div><strong>Porto Limpo</strong></div>
+      <div class="fine">© <span id="year"></span> Porto Limpo. Todos os direitos reservados.</div>
+    </div>
+  </footer>
+
+  <script>
+    // Dados dos bueiros (10 verdes, 5 vermelhos)
+    const markers = [
+      { name:"Av. Jorge Teixeira (BR-364)",     x:22, y:38, status:"alerta" },
+      { name:"Av. Calama",                     x:58, y:30, status:"alerta" },
+      { name:"Av. Pinheiro Machado",           x:42, y:48, status:"alerta" },
+      { name:"Av. Imigrantes",                 x:78, y:54, status:"alerta" },
+      { name:"Av. Rio Madeira",                x:66, y:22, status:"alerta" },
+      { name:"Av. Amazonas",                   x:15, y:60, status:"ok" },
+      { name:"Av. Abunã",                      x:32, y:65, status:"ok" },
+      { name:"Av. Sete de Setembro",           x:48, y:62, status:"ok" },
+      { name:"Av. Rio de Janeiro",             x:62, y:68, status:"ok" },
+      { name:"Av. Guaporé",                    x:74, y:40, status:"ok" },
+      { name:"Av. Raimundo Cantuária",         x:36, y:28, status:"ok" },
+      { name:"Av. Mamoré",                     x:12, y:35, status:"ok" },
+      { name:"Av. Nações Unidas",              x:53, y:18, status:"ok" },
+      { name:"Av. Vieira Caúla",               x:28, y:20, status:"ok" },
+      { name:"Rua Henrique Dias",              x:70, y:70, status:"ok" }
+    ];
+
+    // Seleção de elementos
+    const countTotal = document.getElementById('countTotal');
+    const countGreen = document.getElementById('countGreen');
+    const countRed   = document.getElementById('countRed');
+    const panelMap   = document.getElementById('panel-map');
+    const panelList  = document.getElementById('panel-list');
+    const tabMap     = document.getElementById('tab-map');
+    const tabList    = document.getElementById('tab-list');
+    const listUl     = document.getElementById('list');
+
+    // Contagens
+    const greens = markers.filter(m => m.status==="ok").length;
+    const reds   = markers.filter(m => m.status==="alerta").length;
+
+    countTotal.textContent = markers.length;
+    countGreen.textContent = greens;
+    countRed.textContent   = reds;
+
+    // Popula mapa (simulado)
+    markers.forEach( m => {
+      const badge = document.createElement('div');
+      badge.className = 'badge ' + (m.status==="ok"?"green":"red");
+      badge.style.left = m.x + '%';
+      badge.style.top  = m.y + '%';
+      badge.title = m.name + " • " + (m.status==="ok"?"OK":"Alerta");
+      panelMap.appendChild(badge);
+    });
+
+    // Popula lista
+    markers.forEach( m => {
+      const li = document.createElement('li');
+      li.textContent = m.name;
+      const span = document.createElement('span');
+      span.className = 'tag ' + (m.status==="ok"?"ok":"alerta");
+      span.textContent = (m.status==="ok"?"Verde":"Vermelho");
+      li.appendChild(span);
+      listUl.appendChild(li);
+    });
+
+    // Tab switching
+    tabMap.addEventListener('click', () => {
+      tabMap.setAttribute('aria-selected','true');
+      tabList.setAttribute('aria-selected','false');
+      panelMap.hidden = false;
+      panelList.hidden = true;
+    });
+    tabList.addEventListener('click', () => {
+      tabMap.setAttribute('aria-selected','false');
+      tabList.setAttribute('aria-selected','true');
+      panelMap.hidden = true;
+      panelList.hidden = false;
+    });
+
+    // Ano dinâmico no footer
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Envio do formulário
+    document.getElementById('formDemo').addEventListener('submit', e => {
+      e.preventDefault();
+      alert('Obrigado! Em breve entraremos em contato.');
+      document.getElementById('formDemo').reset();
+    });
+  </script>
+</body>
+</html>
